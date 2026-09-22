@@ -40,12 +40,12 @@ type Tray struct {
 	backupBeforeItem *systray.MenuItem
 
 	// Pre-allocated restore slots (Show/Hide at runtime)
-	restoreManualEmpty *systray.MenuItem
-	restoreAutoEmpty   *systray.MenuItem
-	restoreManualItems []*systray.MenuItem
-	restoreAutoItems   []*systray.MenuItem
-	restoreManualSnaps []string
-	restoreAutoSnaps   []string
+	restore手动Empty *systray.MenuItem
+	restore自动Empty   *systray.MenuItem
+	restore手动Items []*systray.MenuItem
+	restore自动Items   []*systray.MenuItem
+	restore手动Snaps []string
+	restore自动Snaps   []string
 }
 
 func New() *Tray {
@@ -57,65 +57,65 @@ func New() *Tray {
 
 func (t *Tray) Setup(icon []byte) {
 	setIcon(icon)
-	systray.SetTooltip("Project Zomboid Auto Backup")
+	systray.SetTooltip("Project Zomboid 自动备份")
 
-	t.buildSettingsSubmenu()
+	t.build设置Submenu()
 
 	systray.AddSeparator()
 
-	autoLabel := "Auto Backup: OFF"
-	if t.cfg.AutoBackup {
-		autoLabel = "Auto Backup: ON"
+	autoLabel := "自动备份：关闭"
+	if t.cfg.自动Backup {
+		autoLabel = "自动备份：开启"
 	}
-	t.autoBackupItem = systray.AddMenuItemCheckbox(autoLabel, "Toggle automatic backups", t.cfg.AutoBackup)
-	manualItem := systray.AddMenuItem("Manual Backup  "+hotkeyLabel, "Trigger a backup now")
+	t.autoBackupItem = systray.AddMenuItemCheckbox(autoLabel, "切换自动备份", t.cfg.自动Backup)
+	manualItem := systray.AddMenuItem("手动备份  "+hotkeyLabel, "立即执行一次备份")
 
-	t.buildRestoreSubmenu()
+	t.build恢复Submenu()
 
 	systray.AddSeparator()
 
-	quitItem := systray.AddMenuItem("Quit", "Quit ZomboidAutoBackup")
+	quitItem := systray.AddMenuItem("退出", "退出 Zomboid自动Backup")
 
 	go t.handleEvents(manualItem, quitItem)
 	go t.autoBackupLoop()
 	go t.hotkeyLoop()
 }
 
-func (t *Tray) buildSettingsSubmenu() {
-	settingsItem := systray.AddMenuItem("Settings", "Configure backup settings")
+func (t *Tray) build设置Submenu() {
+	settingsItem := systray.AddMenuItem("设置", "配置备份设置")
 
 	t.zomboidDisplay = settingsItem.AddSubMenuItem(
-		fmt.Sprintf("Zomboid Folder: %s", t.cfg.ZomboidFolder), "")
+		fmt.Sprintf("Zomboid 文件夹：%s", t.cfg.ZomboidFolder), "")
 	t.zomboidDisplay.Disable()
-	t.zomboidChange = settingsItem.AddSubMenuItem("Change Zomboid Folder...", "")
+	t.zomboidChange = settingsItem.AddSubMenuItem("更改 Zomboid 文件夹…", "")
 
 	sep1 := settingsItem.AddSubMenuItem("───────────────────", "")
 	sep1.Disable()
 
 	t.backupDisplay = settingsItem.AddSubMenuItem(
-		fmt.Sprintf("Backup Folder: %s", t.cfg.BackupFolder), "")
+		fmt.Sprintf("备份文件夹：%s", t.cfg.BackupFolder), "")
 	t.backupDisplay.Disable()
-	t.backupChange = settingsItem.AddSubMenuItem("Change Backup Folder...", "")
+	t.backupChange = settingsItem.AddSubMenuItem("更改备份文件夹…", "")
 
 	sep2 := settingsItem.AddSubMenuItem("───────────────────", "")
 	sep2.Disable()
 
 	t.intervalParent = settingsItem.AddSubMenuItem(
-		fmt.Sprintf("Backup Every: %d min", t.cfg.BackupInterval), "")
+		fmt.Sprintf("备份间隔：%d 分钟", t.cfg.BackupInterval), "")
 	for _, v := range intervalPresets {
-		item := t.intervalParent.AddSubMenuItem(fmt.Sprintf("%d min", v), "")
+		item := t.intervalParent.AddSubMenuItem(fmt.Sprintf("%d 分钟", v), "")
 		if v == t.cfg.BackupInterval {
 			item.Check()
 		}
 		t.intervalItems = append(t.intervalItems, item)
 	}
-	t.intervalSet = t.intervalParent.AddSubMenuItem("Set...", "Enter a custom interval in minutes")
+	t.intervalSet = t.intervalParent.AddSubMenuItem("自定义…", "输入自定义备份间隔（分钟）")
 
 	sep3 := settingsItem.AddSubMenuItem("───────────────────", "")
 	sep3.Disable()
 
 	t.maxBackupParent = settingsItem.AddSubMenuItem(
-		fmt.Sprintf("Max Backups: %d", t.cfg.MaxBackupFiles), "")
+		fmt.Sprintf("最大备份数：%d", t.cfg.MaxBackupFiles), "")
 	for _, v := range maxBackupPresets {
 		item := t.maxBackupParent.AddSubMenuItem(fmt.Sprintf("%d", v), "")
 		if v == t.cfg.MaxBackupFiles {
@@ -123,49 +123,49 @@ func (t *Tray) buildSettingsSubmenu() {
 		}
 		t.maxBackupItems = append(t.maxBackupItems, item)
 	}
-	t.maxBackupSet = t.maxBackupParent.AddSubMenuItem("Set...  (max 20)", "Enter a custom max backup count")
+	t.maxBackupSet = t.maxBackupParent.AddSubMenuItem("自定义…（最大 20）", "输入自定义最大备份数量")
 }
 
-func (t *Tray) buildRestoreSubmenu() {
-	restoreItem := systray.AddMenuItem("Restore", "Restore a saved backup")
+func (t *Tray) build恢复Submenu() {
+	restoreItem := systray.AddMenuItem("恢复", "恢复已保存的备份")
 
 	t.backupBeforeItem = restoreItem.AddSubMenuItemCheckbox(
-		"Backup before restore", "Create a safety backup of current Saves before restoring",
-		t.cfg.BackupBeforeRestore)
+		"恢复前备份", "恢复前备份当前 Saves 文件夹以确保安全",
+		t.cfg.BackupBefore恢复)
 
 	sep := restoreItem.AddSubMenuItem("───────────────────", "")
 	sep.Disable()
 
-	// Manual restore sub-submenu
-	manualParent := restoreItem.AddSubMenuItem("Manual", "Restore from a manual backup")
-	t.restoreManualEmpty = manualParent.AddSubMenuItem("No manual backups yet", "")
-	t.restoreManualEmpty.Disable()
+	// 手动 restore sub-submenu
+	manualParent := restoreItem.AddSubMenuItem("手动", "从手动备份中恢复")
+	t.restore手动Empty = manualParent.AddSubMenuItem("暂无手动备份", "")
+	t.restore手动Empty.Disable()
 	for i := 0; i < maxBackupCap; i++ {
 		item := manualParent.AddSubMenuItem("", "")
 		item.Hide()
-		t.restoreManualItems = append(t.restoreManualItems, item)
+		t.restore手动Items = append(t.restore手动Items, item)
 	}
 
-	// Auto restore sub-submenu
-	autoParent := restoreItem.AddSubMenuItem("Auto", "Restore from an auto backup")
-	t.restoreAutoEmpty = autoParent.AddSubMenuItem("No auto backups yet", "")
-	t.restoreAutoEmpty.Disable()
+	// 自动 restore sub-submenu
+	autoParent := restoreItem.AddSubMenuItem("自动", "从自动备份中恢复")
+	t.restore自动Empty = autoParent.AddSubMenuItem("暂无自动备份", "")
+	t.restore自动Empty.Disable()
 	for i := 0; i < maxBackupCap; i++ {
 		item := autoParent.AddSubMenuItem("", "")
 		item.Hide()
-		t.restoreAutoItems = append(t.restoreAutoItems, item)
+		t.restore自动Items = append(t.restore自动Items, item)
 	}
 
-	t.refreshRestoreMenus()
+	t.refresh恢复Menus()
 }
 
-// refreshRestoreMenus re-reads backup dirs and updates the pre-allocated slots.
-func (t *Tray) refreshRestoreMenus() {
-	t.refreshRestoreDir("manual", t.restoreManualItems, t.restoreManualEmpty, &t.restoreManualSnaps)
-	t.refreshRestoreDir("auto", t.restoreAutoItems, t.restoreAutoEmpty, &t.restoreAutoSnaps)
+// refresh恢复Menus re-reads backup dirs and updates the pre-allocated slots.
+func (t *Tray) refresh恢复Menus() {
+	t.refresh恢复Dir("manual", t.restore手动Items, t.restore手动Empty, &t.restore手动Snaps)
+	t.refresh恢复Dir("auto", t.restore自动Items, t.restore自动Empty, &t.restore自动Snaps)
 }
 
-func (t *Tray) refreshRestoreDir(subdir string, items []*systray.MenuItem, emptyItem *systray.MenuItem, snaps *[]string) {
+func (t *Tray) refresh恢复Dir(subdir string, items []*systray.MenuItem, emptyItem *systray.MenuItem, snaps *[]string) {
 	dir := filepath.Join(t.cfg.BackupFolder, subdir)
 	newSnaps, _ := backup.ListSnapshots(dir) // newest first; nil on missing dir = empty list
 	*snaps = newSnaps
@@ -207,22 +207,22 @@ func (t *Tray) handleEvents(manualItem, quitItem *systray.MenuItem) {
 		}()
 	}
 
-	restoreManualCh := make(chan int, 1)
-	for i, item := range t.restoreManualItems {
+	restore手动Ch := make(chan int, 1)
+	for i, item := range t.restore手动Items {
 		i, item := i, item
 		go func() {
 			for range item.ClickedCh {
-				restoreManualCh <- i
+				restore手动Ch <- i
 			}
 		}()
 	}
 
-	restoreAutoCh := make(chan int, 1)
-	for i, item := range t.restoreAutoItems {
+	restore自动Ch := make(chan int, 1)
+	for i, item := range t.restore自动Items {
 		i, item := i, item
 		go func() {
 			for range item.ClickedCh {
-				restoreAutoCh <- i
+				restore自动Ch <- i
 			}
 		}()
 	}
@@ -230,11 +230,11 @@ func (t *Tray) handleEvents(manualItem, quitItem *systray.MenuItem) {
 	for {
 		select {
 		case <-t.autoBackupItem.ClickedCh:
-			t.toggleAutoBackup()
+			t.toggle自动Backup()
 		case <-manualItem.ClickedCh:
 			go func() {
-				backup.Manual(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
-				t.refreshRestoreMenus()
+				backup.手动(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
+				t.refresh恢复Menus()
 			}()
 		case <-t.zomboidChange.ClickedCh:
 			t.changeZomboidFolder()
@@ -250,46 +250,46 @@ func (t *Tray) handleEvents(manualItem, quitItem *systray.MenuItem) {
 			t.promptMaxBackups()
 		case <-t.backupBeforeItem.ClickedCh:
 			t.toggleBackupBefore()
-		case idx := <-restoreManualCh:
-			if idx < len(t.restoreManualSnaps) {
-				go t.doRestore("manual", t.restoreManualSnaps[idx])
+		case idx := <-restore手动Ch:
+			if idx < len(t.restore手动Snaps) {
+				go t.do恢复("manual", t.restore手动Snaps[idx])
 			}
-		case idx := <-restoreAutoCh:
-			if idx < len(t.restoreAutoSnaps) {
-				go t.doRestore("auto", t.restoreAutoSnaps[idx])
+		case idx := <-restore自动Ch:
+			if idx < len(t.restore自动Snaps) {
+				go t.do恢复("auto", t.restore自动Snaps[idx])
 			}
 		case <-quitItem.ClickedCh:
-			systray.Quit()
+			systray.退出()
 			return
 		}
 	}
 }
 
-func (t *Tray) doRestore(subdir, snapName string) {
+func (t *Tray) do恢复(subdir, snapName string) {
 	confirmed := confirm(fmt.Sprintf(
-		"Restore \"%s\"?\n\nThis will replace your current Saves folder.", snapName))
+		"恢复“%s”？\n\n这将替换当前的 Saves 文件夹。", snapName))
 	if !confirmed {
 		return
 	}
 	backupPath := filepath.Join(t.cfg.BackupFolder, subdir, snapName)
-	backup.Restore(backupPath, t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.BackupBeforeRestore)
+	backup.恢复(backupPath, t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.BackupBefore恢复)
 }
 
-func (t *Tray) toggleAutoBackup() {
-	t.cfg.AutoBackup = !t.cfg.AutoBackup
-	if t.cfg.AutoBackup {
-		t.autoBackupItem.SetTitle("Auto Backup: ON")
+func (t *Tray) toggle自动Backup() {
+	t.cfg.自动Backup = !t.cfg.自动Backup
+	if t.cfg.自动Backup {
+		t.autoBackupItem.SetTitle("自动备份：开启")
 		t.autoBackupItem.Check()
 	} else {
-		t.autoBackupItem.SetTitle("Auto Backup: OFF")
+		t.autoBackupItem.SetTitle("自动备份：关闭")
 		t.autoBackupItem.Uncheck()
 	}
 	t.cfg.Save() //nolint:errcheck
 }
 
 func (t *Tray) toggleBackupBefore() {
-	t.cfg.BackupBeforeRestore = !t.cfg.BackupBeforeRestore
-	if t.cfg.BackupBeforeRestore {
+	t.cfg.BackupBefore恢复 = !t.cfg.BackupBefore恢复
+	if t.cfg.BackupBefore恢复 {
 		t.backupBeforeItem.Check()
 	} else {
 		t.backupBeforeItem.Uncheck()
@@ -306,12 +306,12 @@ func (t *Tray) selectInterval(idx int) {
 		}
 	}
 	t.cfg.BackupInterval = intervalPresets[idx]
-	t.intervalParent.SetTitle(fmt.Sprintf("Backup Every: %d min", t.cfg.BackupInterval))
+	t.intervalParent.SetTitle(fmt.Sprintf("备份间隔：%d 分钟", t.cfg.BackupInterval))
 	t.cfg.Save() //nolint:errcheck
 }
 
 func (t *Tray) promptInterval() {
-	result, ok := prompt("Backup interval (minutes, 1–1440):", strconv.Itoa(t.cfg.BackupInterval))
+	result, ok := prompt("备份间隔（分钟，1–1440）：", strconv.Itoa(t.cfg.BackupInterval))
 	if !ok {
 		return
 	}
@@ -329,7 +329,7 @@ func (t *Tray) promptInterval() {
 		}
 	}
 	t.cfg.BackupInterval = val
-	t.intervalParent.SetTitle(fmt.Sprintf("Backup Every: %d min", val))
+	t.intervalParent.SetTitle(fmt.Sprintf("备份间隔：%d 分钟", val))
 	t.cfg.Save() //nolint:errcheck
 }
 
@@ -342,12 +342,12 @@ func (t *Tray) selectMaxBackup(idx int) {
 		}
 	}
 	t.cfg.MaxBackupFiles = maxBackupPresets[idx]
-	t.maxBackupParent.SetTitle(fmt.Sprintf("Max Backups: %d", t.cfg.MaxBackupFiles))
+	t.maxBackupParent.SetTitle(fmt.Sprintf("最大备份数：%d", t.cfg.MaxBackupFiles))
 	t.cfg.Save() //nolint:errcheck
 }
 
 func (t *Tray) promptMaxBackups() {
-	result, ok := prompt("Max number of backup files (1–20):", strconv.Itoa(t.cfg.MaxBackupFiles))
+	result, ok := prompt("最大备份文件数量（1–20）：", strconv.Itoa(t.cfg.MaxBackupFiles))
 	if !ok {
 		return
 	}
@@ -368,28 +368,28 @@ func (t *Tray) promptMaxBackups() {
 		}
 	}
 	t.cfg.MaxBackupFiles = val
-	t.maxBackupParent.SetTitle(fmt.Sprintf("Max Backups: %d", val))
+	t.maxBackupParent.SetTitle(fmt.Sprintf("最大备份数：%d", val))
 	t.cfg.Save() //nolint:errcheck
 }
 
 func (t *Tray) changeBackupFolder() {
-	path, ok := chooseFolder("Select a folder to store backups:", t.cfg.BackupFolder)
+	path, ok := chooseFolder("选择用于存放备份的文件夹：", t.cfg.BackupFolder)
 	if !ok {
 		return
 	}
 	t.cfg.BackupFolder = path
-	t.backupDisplay.SetTitle(fmt.Sprintf("Backup Folder: %s", path))
+	t.backupDisplay.SetTitle(fmt.Sprintf("备份文件夹：%s", path))
 	t.cfg.Save() //nolint:errcheck
-	t.refreshRestoreMenus()
+	t.refresh恢复Menus()
 }
 
 func (t *Tray) changeZomboidFolder() {
-	path, ok := chooseFolder("Select your Zomboid game folder:", t.cfg.ZomboidFolder)
+	path, ok := chooseFolder("选择你的 Zomboid 游戏文件夹：", t.cfg.ZomboidFolder)
 	if !ok {
 		return
 	}
 	t.cfg.ZomboidFolder = path
-	t.zomboidDisplay.SetTitle(fmt.Sprintf("Zomboid Folder: %s", path))
+	t.zomboidDisplay.SetTitle(fmt.Sprintf("Zomboid 文件夹：%s", path))
 	t.cfg.Save() //nolint:errcheck
 }
 
@@ -401,8 +401,8 @@ func (t *Tray) hotkeyLoop() {
 	defer hk.Unregister()
 	for range hk.Keydown() {
 		go func() {
-			backup.Manual(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
-			t.refreshRestoreMenus()
+			backup.手动(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
+			t.refresh恢复Menus()
 		}()
 	}
 }
@@ -412,15 +412,15 @@ func (t *Tray) autoBackupLoop() {
 	defer ticker.Stop()
 	var lastRun time.Time
 	for range ticker.C {
-		if !t.cfg.AutoBackup {
+		if !t.cfg.自动Backup {
 			continue
 		}
 		interval := time.Duration(t.cfg.BackupInterval) * time.Minute
 		if time.Since(lastRun) >= interval {
 			lastRun = time.Now()
 			go func() {
-				backup.Auto(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
-				t.refreshRestoreMenus()
+				backup.自动(t.cfg.ZomboidFolder, t.cfg.BackupFolder, t.cfg.MaxBackupFiles)
+				t.refresh恢复Menus()
 			}()
 		}
 	}
@@ -431,7 +431,7 @@ func chooseFolder(prompt, defaultPath string) (string, bool) {
 }
 
 func confirm(message string) bool {
-	return dialog.Confirm(message, "Restore")
+	return dialog.Confirm(message, "恢复")
 }
 
 func prompt(message, defaultValue string) (string, bool) {
