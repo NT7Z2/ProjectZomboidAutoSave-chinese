@@ -45,16 +45,16 @@ func Restore(backupPath, zomboidFolder, backupFolder string, backupFirst bool) {
 
 	// Remove existing Saves so the extracted tree replaces it cleanly
 	if err := os.RemoveAll(savesDir); err != nil {
-		showDialog(fmt.Sprintf("Could not remove existing Saves folder:\n%v", err))
+		showDialog(fmt.Sprintf("无法删除现有的 Saves 文件夹：\n%v", err))
 		return
 	}
 
 	if err := untarZst(backupPath, zomboidFolder); err != nil {
-		showDialog(fmt.Sprintf("Restore failed:\n%v", err))
+		showDialog(fmt.Sprintf("恢复失败：\n%v", err))
 		return
 	}
 
-	showNotification("Zomboid Backup", "Restore completed successfully!")
+	showNotification("Zomboid 备份", "恢复成功！")
 }
 
 // ListSnapshots returns snapshot file names in dir, newest first.
@@ -84,14 +84,14 @@ func run(zomboidFolder, backupFolder, subdir string, maxBackups int, notifySucce
 
 	if _, err := os.Stat(savesDir); os.IsNotExist(err) {
 		if notifySuccess {
-			showDialog("No 'Saves' folder found in the configured Zomboid folder.\n\nPlease check your Zomboid Folder setting.")
+			showDialog("在配置的 Zomboid 文件夹中未找到 “Saves” 文件夹。\n\n请检查 Zomboid 文件夹设置。")
 		}
 		return
 	}
 
 	destDir := filepath.Join(backupFolder, subdir)
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
-		showDialog(fmt.Sprintf("Could not create backup folder:\n%v", err))
+		showDialog(fmt.Sprintf("无法创建备份文件夹：\n%v", err))
 		return
 	}
 
@@ -102,17 +102,17 @@ func run(zomboidFolder, backupFolder, subdir string, maxBackups int, notifySucce
 
 	if err := tarZst(savesDir, snapPath); err != nil {
 		os.Remove(snapPath)
-		showDialog(fmt.Sprintf("Backup failed:\n%v", err))
+		showDialog(fmt.Sprintf("备份失败：\n%v", err))
 		return
 	}
 
 	if err := enforceLimit(destDir, maxBackups); err != nil {
-		showNotification("Zomboid Backup", fmt.Sprintf("Backup saved but rotation failed: %v", err))
+		showNotification("Zomboid 备份", fmt.Sprintf("备份已保存，但清理旧备份失败：%v", err))
 		return
 	}
 
 	if notifySuccess {
-		showNotification("Zomboid Backup", fmt.Sprintf("Manual backup saved: %s", snapName))
+		showNotification("Zomboid 备份", fmt.Sprintf("手动备份已保存：%s", snapName))
 	}
 }
 
