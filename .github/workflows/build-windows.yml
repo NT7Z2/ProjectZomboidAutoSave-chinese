@@ -1,0 +1,35 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chinese
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build Windows EXE
+        shell: pwsh
+        run: |
+          $name = "ZomboidAutoBackup_chinese_windows_amd64"
+          New-Item -ItemType Directory -Force $name | Out-Null
+          $env:CGO_ENABLED = "1"
+          go build -trimpath -ldflags "-s -w -H=windowsgui" -o "$name\\ZomboidAutoBackup.exe" .
+          Compress-Archive -Path "$name\\ZomboidAutoBackup.exe" -DestinationPath "$name.zip"
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZomboidAutoBackup_chinese_windows_amd64
+          path: ZomboidAutoBackup_chinese_windows_amd64.zip
+          if-no-files-found: error
