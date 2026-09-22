@@ -25,7 +25,7 @@ func Confirm(message, okLabel string) bool {
 	err := zenity.Question(message,
 		zenity.Title("ZomboidAutoBackup"),
 		zenity.OKLabel(okLabel),
-		zenity.CancelLabel("Cancel"),
+		zenity.取消Label("取消"),
 		zenity.WarningIcon,
 	)
 	return err == nil
